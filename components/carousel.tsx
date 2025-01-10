@@ -9,25 +9,45 @@ export const Book = ({
   position,
   rotation,
   textureUrl,
+  normalMapUrl,
+  mixmapsUrl,
+  occlusionMapUrl,
+  roughnessMapUrl,
   onClick,
 }: {
   position: [number, number, number];
   rotation: [number, number, number];
   textureUrl: string;
+  normalMapUrl: string;
+  mixmapsUrl: string;
+  occlusionMapUrl: string;
+  roughnessMapUrl?: string;
   onClick: () => void;
 }) => {
   const originalModel = useFBX("/models/book.fbx"); // Load the 3D model
   const texture = useTexture(textureUrl); // Load the texture
+  const normalMap = useTexture(normalMapUrl); // Load the normal map
+  const mixmaps = useTexture(mixmapsUrl); // Load the mipmaps
+  const occlusionMap = useTexture(occlusionMapUrl) ?? null; // Load the occlusion map
+
+  const roughnessMap = roughnessMapUrl ? useTexture(roughnessMapUrl) : null; // Load the roughness map if available
 
   // Clone the model for each instance
   const bookModel = useMemo(() => originalModel.clone(), [originalModel]);
 
   // Traverse the model to apply the texture to all meshes
-  bookModel.traverse((child: any) => {
-    if (child.isMesh) {
+  bookModel.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
       child.material = new THREE.MeshStandardMaterial({ map: texture }); // Apply texture
       child.castShadow = true; // Enable shadows
       child.receiveShadow = true;
+      child.material.normalMap = normalMap; // Apply normal map
+      child.material.aoMap = occlusionMap; // Apply occlusion map
+      child.material.metalness = 0.5; // Adjust metalness
+      child.material.roughness = 0.5; // Adjust roughness
+      child.material.metalnessMap = mixmaps; // Apply mixmaps
+      if (child.material.roughnessMap)
+        child.material.roughnessMap = roughnessMap; // Apply roughness map
     }
   });
 
@@ -51,14 +71,47 @@ export const Carousel = () => {
   const clickLock = useRef(false); // Prevent double clicks
 
   const books = [
-    { texture: "/textures/book/Book_Albedo2.png" },
-    { texture: "/textures/book/Book-Albedo.png" },
-    { texture: "/textures/book/Book_Albedo3.png" },
-    { texture: "/textures/book/Book_Albedo4.png" },
-    { texture: "/textures/book/Book_Albedo5.png" },
-    { texture: "/textures/book/Book_Albedo3.png" },
-    { texture: "/textures/book/Book_Albedo4.png" },
-    { texture: "/textures/book/Book_Albedo5.png" },
+    {
+      texture: "/textures/book/Book_Albedo2.png",
+      normalMap: "/textures/book/Book_Normals2.png",
+      mixmaps: "/textures/book/Book_MixMap2.png",
+    },
+    {
+      texture: "/textures/book/Book-Albedo.png",
+      normalMap: "/textures/book/Book_Normals.png",
+      mixmaps: "/textures/book/Book_MixMap.png",
+      roughness: "/textures/book/Book_Roughness.png",
+    },
+    {
+      texture: "/textures/book/Book_Albedo3.png",
+      normalMap: "/textures/book/Book_Normals3.png",
+      mixmaps: "/textures/book/Book_MixMap3.png",
+    },
+    {
+      texture: "/textures/book/Book_Albedo4.png",
+      normalMap: "/textures/book/Book_Normals4.png",
+      mixmaps: "/textures/book/Book_MixMap4.png",
+    },
+    {
+      texture: "/textures/book/Book_Albedo5.png",
+      normalMap: "/textures/book/Book_Normals5.png",
+      mixmaps: "/textures/book/Book_MixMap5.png",
+    },
+    {
+      texture: "/textures/book/Book_Albedo3.png",
+      normalMap: "/textures/book/Book_Normals3.png",
+      mixmaps: "/textures/book/Book_MixMap3.png",
+    },
+    {
+      texture: "/textures/book/Book_Albedo4.png",
+      normalMap: "/textures/book/Book_Normals4.png",
+      mixmaps: "/textures/book/Book_MixMap4.png",
+    },
+    {
+      texture: "/textures/book/Book_Albedo5.png",
+      normalMap: "/textures/book/Book_Normals5.png",
+      mixmaps: "/textures/book/Book_MixMap5.png",
+    },
   ];
 
   const angularSpacing = (2 * Math.PI) / books.length; // Space books equally in a circle
@@ -110,7 +163,7 @@ export const Carousel = () => {
         enableZoom={false}
       />
       <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 10]} castShadow />
+      <directionalLight position={[-10, 20, 10]} castShadow />
       {bookPositions.map((book, index) => {
         if (selectedBook === null || selectedBook === index) {
           const isSelected = selectedBook === index;
@@ -130,6 +183,10 @@ export const Carousel = () => {
               }
               textureUrl={books[index].texture}
               onClick={() => handleBookClick(index)}
+              normalMapUrl={books[index].normalMap}
+              mixmapsUrl={books[index].mixmaps || ""}
+              occlusionMapUrl="/textures/book/Book_Occlusion.png"
+              roughnessMapUrl={books[index].roughness || ""}
             />
           );
         }
@@ -139,10 +196,10 @@ export const Carousel = () => {
       {/* Add the 3D object for returning to the carousel */}
       {selectedBook !== null && (
         <mesh
-          position={[10, 10, 8]} // Position in front of the camera
+          position={[10, 1, 8]} // Position in front of the camera
           onClick={handleBackToCarousel}
         >
-          <sphereGeometry args={[0.5, 32, 32]} />{" "}
+          <sphereGeometry args={[0.5, 16, 32]} />{" "}
           {/* Replace with your 3D object */}
           <meshStandardMaterial color="orange" emissive="yellow" />
         </mesh>
