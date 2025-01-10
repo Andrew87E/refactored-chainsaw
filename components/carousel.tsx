@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useFBX, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { normalMap, roughness } from "three/tsl";
 
 export const Book = ({
   position,
